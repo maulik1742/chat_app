@@ -1,0 +1,9 @@
+// Action Types
+export const SET_CURRENT_USER = "SET_CURRENT_USER";
+export const SET_USERS = "SET_USERS";
+export const SET_CHATS = "SET_CHATS";
+export const SET_ACTIVE_CHAT = "SET_ACTIVE_CHAT";
+export const SET_MESSAGES = "SET_MESSAGES";
+export const ADD_MESSAGE = "ADD_MESSAGE";
+export const SET_LOADING = "SET_LOADING";
+export const LOGOUT = "LOGOUT";
