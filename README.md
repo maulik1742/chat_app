@@ -1,6 +1,9 @@
-# 🚀 Premium Real-Time Chat Application
+# 💬 ChatApp — Real-Time Messaging with MERN + Socket.io
 
-A high-performance, full-stack live chat application built with modern technologies. This project features real-time messaging, secure user authentication, and a stunning "Premium Dark" glassmorphism interface.
+A full-stack real-time chat application where users can register, 
+login, and instantly message each other using WebSocket technology.
+Built to demonstrate real-time bidirectional communication, 
+JWT-based auth, and clean MERN architecture.
 
 ---
 
