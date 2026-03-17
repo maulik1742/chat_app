@@ -7,6 +7,9 @@ import {
   ADD_MESSAGE,
   SET_LOADING,
   LOGOUT,
+  DELETE_MESSAGE,
+  UPDATE_MESSAGE_STATUS,
+  UPDATE_ALL_MESSAGES_SEEN,
 } from "../actions/types";
 import { User, Chat, Message } from "../../lib/types";
 
@@ -65,6 +68,29 @@ const chatReducer = (state = initialState, action: any): ChatState => {
       return { ...state, messages: updatedMessages, chats: updatedChats };
     case SET_LOADING:
       return { ...state, loading: action.payload };
+    case DELETE_MESSAGE:
+      return {
+        ...state,
+        messages: state.messages.filter((msg) => msg._id !== action.payload),
+      };
+    case UPDATE_MESSAGE_STATUS:
+      return {
+        ...state,
+        messages: state.messages.map((msg) =>
+          msg._id === action.payload.messageId
+            ? { ...msg, status: action.payload.status }
+            : msg
+        ),
+      };
+    case UPDATE_ALL_MESSAGES_SEEN:
+      return {
+        ...state,
+        messages: state.messages.map((msg) =>
+          msg.senderId !== action.payload.readerId && msg.status !== "seen"
+            ? { ...msg, status: "seen" }
+            : msg
+        ),
+      };
     case LOGOUT:
       return initialState;
     default:

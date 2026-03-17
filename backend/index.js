@@ -49,11 +49,16 @@ io.on('connection', (socket) => {
         try {
             const { chatId, senderId, text } = messageData;
 
+            // Check if receiver is online in this room
+            const clientsInRoom = io.sockets.adapter.rooms.get(chatId);
+            const isReceiverOnline = clientsInRoom && clientsInRoom.size > 1;
+
             // Save message to MongoDB
             const newMessage = new Message({
                 chatId,
                 senderId,
                 text,
+                status: isReceiverOnline ? 'delivered' : 'sent'
             });
 
             await newMessage.save();
@@ -73,6 +78,35 @@ io.on('connection', (socket) => {
     // Handle user typing
     socket.on('typing', ({ chatId, senderId }) => {
         socket.to(chatId).emit('userTyping', { senderId });
+    });
+
+    // Handle message deletion
+    socket.on('deleteMessage', ({ chatId, messageId }) => {
+        io.to(chatId).emit('messageDeleted', { messageId, chatId });
+    });
+
+    // Handle message delivery status
+    socket.on('messageDelivered', async ({ messageId, chatId }) => {
+        try {
+            await Message.findByIdAndUpdate(messageId, { status: 'delivered' });
+            io.to(chatId).emit('messageStatusUpdated', { messageId, status: 'delivered' });
+        } catch (error) {
+            console.error('Error updating delivery status:', error);
+        }
+    });
+
+    // Handle message seen status
+    socket.on('messagesSeen', async ({ chatId, userId }) => {
+        try {
+            // Update all 'sent' or 'delivered' messages not from this user to 'seen'
+            await Message.updateMany(
+                { chatId, senderId: { $ne: userId }, status: { $ne: 'seen' } },
+                { status: 'seen' }
+            );
+            io.to(chatId).emit('messagesStatusSeen', { chatId, readerId: userId });
+        } catch (error) {
+            console.error('Error updating seen status:', error);
+        }
     });
 
     // Handle user disconnection

@@ -10,6 +10,7 @@ export interface Message {
   chatId: string;
   senderId: string;
   text: string;
+  status?: 'sent' | 'delivered' | 'seen';
   createdAt: string;
 }
 

@@ -11,6 +11,7 @@ import {
   startChat,
   openChat,
   addMessage,
+  removeMessage,
 } from "@/store/actions/chatActions";
 import { socket } from "@/lib/socket";
 import { Message } from "@/lib/types";
@@ -23,6 +24,9 @@ import {
   Users,
   Lock,
   UserPlus,
+  Trash2,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -43,6 +47,7 @@ export default function ChatApp() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<"recent" | "users">("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, messageId: string } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +60,13 @@ export default function ChatApp() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Handle global click to close context menu
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
 
   // Handle Login/Register
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,10 +89,45 @@ export default function ChatApp() {
       dispatch(addMessage(message));
     });
 
+    socket.on("messageDeleted", ({ messageId }: { messageId: string }) => {
+      dispatch({ type: "DELETE_MESSAGE", payload: messageId });
+    });
+
+    socket.on("messageStatusUpdated", ({ messageId, status }: { messageId: string, status: 'sent' | 'delivered' | 'seen' }) => {
+      dispatch({ type: "UPDATE_MESSAGE_STATUS", payload: { messageId, status } });
+    });
+
+    socket.on("messagesStatusSeen", ({ chatId, readerId }: { chatId: string, readerId: string }) => {
+      dispatch({ type: "UPDATE_ALL_MESSAGES_SEEN", payload: { chatId, readerId } });
+    });
+
     return () => {
       socket.off("receiveMessage");
+      socket.off("messageDeleted");
+      socket.off("messageStatusUpdated");
+      socket.off("messagesStatusSeen");
     };
   }, [dispatch]);
+
+  // Emit 'messagesSeen' when active chat changes or new messages arrive
+  useEffect(() => {
+    if (activeChatId && currentUser && messages.length > 0) {
+      const hasUnseen = messages.some(
+        (m) => m.senderId !== currentUser._id && m.status !== "seen"
+      );
+      if (hasUnseen) {
+        socket.emit("messagesSeen", { chatId: activeChatId, userId: currentUser._id });
+      }
+    }
+  }, [activeChatId, messages, currentUser]);
+
+  // Emit 'messageDelivered' when receiving a message in an active conversation (if not already handled by backend)
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.senderId !== currentUser?._id && lastMsg.status === 'sent') {
+      socket.emit('messageDelivered', { messageId: lastMsg._id, chatId: activeChatId });
+    }
+  }, [messages, currentUser, activeChatId]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -414,6 +461,18 @@ export default function ChatApp() {
                           "flex flex-col group",
                           isMe ? "ml-auto items-end" : "mr-auto items-start",
                         )}
+                        onContextMenu={(e) => {
+                          if (isMe && msg._id) {
+                            e.preventDefault();
+                            let x = e.pageX;
+                            let y = e.pageY;
+                            const menuWidth = 180;
+                            const menuHeight = 50;
+                            if (window.innerWidth - x < menuWidth) x -= menuWidth;
+                            if (window.innerHeight - y < menuHeight) y -= menuHeight;
+                            setContextMenu({ x, y, messageId: msg._id });
+                          }
+                        }}
                       >
                         <div
                           className={cn(
@@ -433,9 +492,20 @@ export default function ChatApp() {
                             })}
                           </span>
                           {isMe && (
-                            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
-                              Sent
-                            </span>
+                            <div className="flex items-center -ml-1">
+                              {msg.status === "sent" && (
+                                <Check className="w-3.5 h-3.5 text-neutral-500" />
+                              )}
+                              {msg.status === "delivered" && (
+                                <CheckCheck className="w-3.5 h-3.5 text-neutral-500" />
+                              )}
+                              {msg.status === "seen" && (
+                                <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+                              )}
+                              {!msg.status && (
+                                <Check className="w-3.5 h-3.5 text-neutral-500" />
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -503,6 +573,24 @@ export default function ChatApp() {
                 className="mt-10 px-10 py-4 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 rounded-2xl text-xs font-black tracking-[0.2em] transition-all uppercase"
               >
                 Find People
+              </button>
+            </div>
+          )}
+
+          {/* Context Menu Overlay */}
+          {contextMenu && (
+            <div
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+              className="fixed z-50 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl py-2 min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            >
+              <button
+                onClick={() => {
+                  dispatch(removeMessage(activeChatId!, contextMenu.messageId) as any);
+                  setContextMenu(null);
+                }}
+                className="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-neutral-800 transition-colors font-bold flex items-center gap-3 whitespace-nowrap"
+              >
+                <Trash2 className="w-[18px] h-[18px]" /> Delete Message
               </button>
             </div>
           )}

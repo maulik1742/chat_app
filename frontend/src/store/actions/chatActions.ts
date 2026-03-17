@@ -9,6 +9,7 @@ import {
   ADD_MESSAGE,
   SET_LOADING,
   LOGOUT,
+  DELETE_MESSAGE,
 } from "./types";
 import { User, Chat, Message } from "../../lib/types";
 import { socket } from "../../lib/socket";
@@ -157,5 +158,16 @@ export const openChat = (chatId: string) => async (dispatch: AppDispatch) => {
     console.error("Fetch messages error:", error);
   } finally {
     dispatch(setLoading(false));
+  }
+};
+
+// Delete a Message
+export const removeMessage = (chatId: string, messageId: string) => async (dispatch: AppDispatch) => {
+  try {
+    await api.delete(`/chat/messages/${messageId}`);
+    dispatch({ type: DELETE_MESSAGE, payload: messageId });
+    socket.emit("deleteMessage", { chatId, messageId });
+  } catch (error) {
+    console.error("Delete message error:", error);
   }
 };

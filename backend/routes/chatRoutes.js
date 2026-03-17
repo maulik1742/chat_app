@@ -139,4 +139,26 @@ router.get('/messages/:chatId', protect, async (req, res) => {
     }
 });
 
+// 7. Delete a message - Protected
+router.delete('/messages/:messageId', protect, async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const message = await Message.findById(messageId);
+        
+        if (!message) {
+            return res.status(404).json({ message: 'Message not found' });
+        }
+
+        if (message.senderId.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'User not authorized to delete this message' });
+        }
+
+        await Message.findByIdAndDelete(messageId);
+
+        res.json({ message: 'Message removed', messageId });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router;
