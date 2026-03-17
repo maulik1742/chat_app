@@ -6,8 +6,8 @@ import { StoreProvider } from "@/components/StoreProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Live Chat App",
-  description: "Real-time chat with Socket.io and Next.js",
+  title: "Talksy",
+  description: "Talksy - Real-time chat with Socket.io and Next.js",
 };
 
 export default function RootLayout({

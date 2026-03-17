@@ -87,14 +87,18 @@ router.get('/users/:currentUserId', protect, async (req, res) => {
 router.post('/start', protect, async (req, res) => {
     try {
         const { senderId, receiverId } = req.body;
+        const mongoose = require('mongoose');
+
+        const senderObjectId = new mongoose.Types.ObjectId(senderId);
+        const receiverObjectId = new mongoose.Types.ObjectId(receiverId);
 
         let chat = await Chat.findOne({
-            participants: { $all: [senderId, receiverId] }
+            participants: { $all: [senderObjectId, receiverObjectId] }
         }).populate('participants', 'username email');
 
         if (!chat) {
             chat = new Chat({
-                participants: [senderId, receiverId]
+                participants: [senderObjectId, receiverObjectId]
             });
             await chat.save();
             chat = await Chat.findById(chat._id).populate('participants', 'username email');

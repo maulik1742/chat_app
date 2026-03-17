@@ -1,6 +1,6 @@
-# 🚀 Premium Real-Time Chat Application
+# 🚀 Talksy - Premium Real-Time Chat Application
 
-A high-performance, full-stack live chat application built with modern technologies. This project features real-time messaging, secure user authentication, and a stunning "Premium Dark" glassmorphism interface.
+Talksy is a high-performance, full-stack live chat application built with modern technologies. This project features real-time messaging, secure user authentication, and a stunning "Premium Dark" glassmorphism interface.
 
 ---
 
@@ -40,7 +40,7 @@ A high-performance, full-stack live chat application built with modern technolog
 ## 📂 Project Structure
 
 ```bash
-chat_app/
+talksy/
 ├── backend/                # Node.js/Express Server
 │   ├── config/             # Database Connection
 │   ├── middleware/         # Auth Protection
@@ -77,7 +77,7 @@ Create a `.env` file in the `backend/` folder:
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/chat_app
+MONGODB_URI=mongodb://localhost:27017/talksy
 JWT_SECRET=your_secret_key_here
 ```
 

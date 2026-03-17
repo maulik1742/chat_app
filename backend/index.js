@@ -23,7 +23,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.get('/', (req, res) => res.send('Chat API is running...'));
+app.get('/', (req, res) => res.send('Talksy API is running...'));
 app.use('/api/chat', chatRoutes);
 
 // Socket.io initialization
