@@ -23,10 +23,11 @@ import {
   LogOut,
   Users,
   Lock,
-  UserPlus,
   Trash2,
   Check,
   CheckCheck,
+  ChevronLeft,
+  Menu,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -48,6 +49,7 @@ export default function ChatApp() {
   const [sidebarTab, setSidebarTab] = useState<"recent" | "users">("recent");
   const [searchQuery, setSearchQuery] = useState("");
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, messageId: string } | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -247,9 +249,14 @@ export default function ChatApp() {
 
   return (
     <>
-      <div className="flex h-screen bg-neutral-950 text-neutral-200 overflow-hidden font-sans">
+      <div className="flex h-screen bg-neutral-950 text-neutral-200 overflow-hidden font-sans relative">
         {/* Sidebar */}
-        <aside className="w-[380px] border-r border-neutral-800/50 flex flex-col bg-neutral-900/30 backdrop-blur-3xl z-20">
+        <aside 
+          className={cn(
+            "fixed inset-y-0 left-0 z-30 w-full md:relative md:w-[380px] border-r border-neutral-800/50 flex flex-col bg-neutral-900/30 backdrop-blur-3xl transition-transform duration-300 ease-in-out md:translate-x-0",
+            mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
           {/* User Header */}
           <header className="p-4 border-b border-neutral-800/50">
             <div className="flex justify-between items-center mb-8">
@@ -334,7 +341,10 @@ export default function ChatApp() {
                   return (
                     <button
                       key={chat._id}
-                      onClick={() => dispatch(openChat(chat._id))}
+                      onClick={() => {
+                          dispatch(openChat(chat._id));
+                          setMobileSidebarOpen(false);
+                        }}
                       className={cn(
                         "w-full flex items-center gap-4 p-5 rounded-3xl transition-all border group relative",
                         isActive
@@ -401,6 +411,7 @@ export default function ChatApp() {
                     onClick={() => {
                       dispatch(startChat(currentUser._id, u._id));
                       setSidebarTab("recent");
+                      setMobileSidebarOpen(false);
                     }}
                     className="w-full flex items-center gap-4 p-5 rounded-3xl transition-all border border-transparent hover:bg-neutral-800/30 hover:border-neutral-800/50 group"
                   >
@@ -422,15 +433,24 @@ export default function ChatApp() {
         </aside>
 
         {/* Main Area */}
-        <main className="flex-1 flex flex-col bg-neutral-950 relative">
+        <main className={cn(
+          "flex-1 flex flex-col bg-neutral-950 relative w-full transition-all duration-300",
+          !mobileSidebarOpen ? "translate-x-0 opacity-100" : "max-md:translate-x-full max-md:opacity-0"
+        )}>
           <div className="absolute inset-0 bg-linear-to-b from-blue-500/5 to-transparent pointer-events-none" />
 
           {activeChatId ? (
             <>
               {/* Header */}
-              <header className="h-[120px] flex items-center px-10 border-b border-neutral-800/50 bg-neutral-950/50 backdrop-blur-3xl sticky top-0 z-10">
-                <div className="flex items-center gap-6">
-                  <div className="w-[60px] h-[60px] rounded-2xl bg-linear-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center border border-blue-500/30 shadow-2xl">
+              <header className="h-[100px] md:h-[120px] flex items-center px-4 md:px-10 border-b border-neutral-800/50 bg-neutral-950/50 backdrop-blur-3xl sticky top-0 z-10 gap-4">
+                <button 
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="md:hidden p-3 bg-neutral-800 rounded-2xl hover:bg-neutral-700 transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <div className="flex items-center gap-3 md:gap-6">
+                  <div className="w-[50px] h-[50px] md:w-[60px] md:h-[60px] rounded-2xl bg-linear-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center border border-blue-500/30 shadow-2xl">
                     <span className="text-2xl font-black text-blue-400 capitalize">
                       {otherParticipantName?.[0]}
                     </span>
@@ -523,10 +543,10 @@ export default function ChatApp() {
               </div>
 
               {/* Input Overlay */}
-              <div className="p-10 bg-neutral-950/80 backdrop-blur-2xl">
+              <div className="p-4 md:p-10 bg-neutral-950/80 backdrop-blur-2xl">
                 <form
                   onSubmit={handleSendMessage}
-                  className="max-w-5xl mx-auto flex gap-6 items-end"
+                  className="max-w-5xl mx-auto flex gap-3 md:gap-6 items-end"
                 >
                   <div className="flex-1 relative group">
                     <textarea
@@ -540,36 +560,39 @@ export default function ChatApp() {
                           handleSendMessage(e as any);
                         }
                       }}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-3xl px-8 py-5 focus:ring-4 focus:ring-blue-500/10 outline-none text-white transition-all text-sm resize-none overflow-hidden max-h-40 placeholder:text-neutral-600 shadow-2xl"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-2xl md:rounded-3xl px-6 md:px-8 py-4 md:py-5 focus:ring-4 focus:ring-blue-500/10 outline-none text-white transition-all text-sm resize-none overflow-hidden max-h-40 placeholder:text-neutral-600 shadow-2xl"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:opacity-50 text-white p-5 rounded-3xl transition-all shadow-xl shadow-blue-600/30 active:scale-90 shrink-0 group"
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:opacity-50 text-white p-4 md:p-5 rounded-2xl md:rounded-3xl transition-all shadow-xl shadow-blue-600/30 active:scale-90 shrink-0 group"
                   >
-                    <Send className="w-7 h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    <Send className="w-6 h-6 md:w-7 md:h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </button>
                 </form>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-20 text-center animate-in fade-in zoom-in duration-1000">
-              <div className="relative mb-12">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-20 text-center animate-in fade-in zoom-in duration-1000">
+              <div className="relative mb-8 md:mb-12">
                 <div className="absolute inset-x-0 inset-y-0 bg-blue-500 blur-3xl opacity-10 animate-pulse" />
-                <div className="w-[120px] h-[120px] bg-neutral-900/50 backdrop-blur-2xl rounded-[40px] flex items-center justify-center border border-neutral-800/50 relative shadow-2xl">
-                  <MessageSquare className="w-16 h-16 text-blue-500 opacity-40" />
+                <div className="w-[100px] h-[100px] md:w-[120px] md:h-[120px] bg-neutral-900/50 backdrop-blur-2xl rounded-[30px] md:rounded-[40px] flex items-center justify-center border border-neutral-800/50 relative shadow-2xl">
+                  <MessageSquare className="w-12 h-12 md:w-16 md:h-16 text-blue-500 opacity-40" />
                 </div>
               </div>
-              <h3 className="text-4xl font-extrabold text-neutral-200 tracking-tighter mb-4 uppercase">
+              <h3 className="text-3xl md:text-4xl font-extrabold text-neutral-200 tracking-tighter mb-4 uppercase">
                 Talksy
               </h3>
-              <p className="max-w-md text-neutral-500 font-medium leading-relaxed">
+              <p className="max-w-md text-sm md:text-base text-neutral-500 font-medium leading-relaxed">
                 Select a conversation from the sidebar or find a new contact to
                 start messaging in real-time.
               </p>
               <button
-                onClick={() => setSidebarTab("users")}
+                onClick={() => {
+                  setSidebarTab("users");
+                  setMobileSidebarOpen(true);
+                }}
                 className="mt-10 px-10 py-4 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 rounded-2xl text-xs font-black tracking-[0.2em] transition-all uppercase"
               >
                 Find People
